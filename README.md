@@ -1,6 +1,6 @@
 # Nadi Data
 
-Stream data of anykind in batch or continuous mode
+Data Integration made simple and powerful
 
 ## Contribution
 
