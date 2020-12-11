@@ -2,12 +2,20 @@
 # Use of this source code is governed by a BSD-style
 # license that can be found in the LICENSE file.
 
-import readcsv
+import dask
+import dask.dataframe as dd
 import timeit
 
-t1 = timeit.default_timer()
-csv_data_generator = readcsv.Readcsv('/Users/sriyan/Downloads/sales_50mb_1500000.csv','r',5000,'\n',',').process_chunks_in_parallel()
-print(len(list(csv_data_generator)))
-print("{} Seconds Needed for ProcessPoolExecutor".format(timeit.default_timer() - t1))
+if __name__ == "__main__":
+    
+    t1 = timeit.default_timer()
+    df = dd.read_csv("/Users/sripri/Downloads/1500000_Sales_Records.csv")
+    #print(df)
+    df.head(500000)
+    #df.to_parquet("/Users/sripri/Downloads/1500000_Sales_Records.parquet", engine='pyarrow')
+    print("{} Seconds Needed for csv".format(timeit.default_timer() - t1))
 
-# 11.09 seconds for print(len(list(csv_data_generator)))
+    t2 = timeit.default_timer()
+    df1 = dd.read_parquet("/Users/sripri/Downloads/1500000_Sales_Records.parquet", engine='pyarrow')
+    df1.head(500000)
+    print("{} Seconds Needed for Parquet".format(timeit.default_timer() - t2))

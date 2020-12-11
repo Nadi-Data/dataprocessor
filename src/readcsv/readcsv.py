@@ -2,8 +2,6 @@
 # Use of this source code is governed by a BSD-style
 # license that can be found in the LICENSE file.
 
-from concurrent.futures import ThreadPoolExecutor
-
 class Readcsv():
     
     def __init__(self, file, read_mode=None, chunk_size=None, row_sep=None, delim=None):
