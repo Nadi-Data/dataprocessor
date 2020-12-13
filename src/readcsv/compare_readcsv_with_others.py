@@ -5,23 +5,19 @@
 import readcsv
 import timeit
 import csv
-import pandas
-import modin.pandas as pd
+import pandas as pd
 import os
-os.environ["MODIN_ENGINE"] = "ray"
-from concurrent.futures import ThreadPoolExecutor
 
 
 t1 = timeit.default_timer()
 csv_data = readcsv.Readcsv('/Users/sriyan/Downloads/sales_50mb_1500000.csv','r',5000,'\n',',').process_chunks_in_parallel()
 #print(len(list(csv_data)))
-executor = ThreadPoolExecutor(max_workers = 4)
 print("{} Seconds Needed for ProcessPoolExecutor".format(timeit.default_timer() - t1))
 
 # 11.09 seconds for print(len(list(csv_data)))
 
 t2 = timeit.default_timer()
-csv_data = pandas.read_csv('/Users/sriyan/Downloads/sales_50mb_1500000.csv')
+csv_data = pd.read_csv('/Users/sriyan/Downloads/sales_50mb_1500000.csv')
 #print(len(csv_data))
 print("{} Seconds Needed for pandas".format(timeit.default_timer() - t2))
 
@@ -34,8 +30,3 @@ with open('/Users/sriyan/Downloads/sales_50mb_1500000.csv','r') as csv_file:
 print("{} Seconds Needed for csv".format(timeit.default_timer() - t3))  
 
 # 21 seconds for print(len(rows))
-
-t4 = timeit.default_timer()
-csv_data = pd.read_csv('/Users/sriyan/Downloads/sales_50mb_1500000.csv')
-#print(len(csv_data))
-print("{} Seconds Needed for Modin Pandas".format(timeit.default_timer() - t4))
