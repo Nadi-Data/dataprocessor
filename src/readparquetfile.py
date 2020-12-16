@@ -18,6 +18,6 @@ class ReadParquetFile():
         t1 = timeit.default_timer()
         """ write parquet file using dask to_parquet"""
         ipdf= dd.read_parquet(self.path, engine=self.engine)
-        print("Time taken : {} for reading parquet file '{}'".format(timeit.default_timer() - t1, self.path))
+        print("Time taken : {} seconds for reading parquet file '{}'".format(timeit.default_timer() - t1, self.path))
 
         return ipdf

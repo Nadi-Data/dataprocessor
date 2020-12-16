@@ -32,4 +32,4 @@ class WriteTextFile():
                          compute=self.compute,
                          index=self.index,
                          compression=self.compression)
-        print("Time taken : {} for writing file '{}'".format(timeit.default_timer() - t1, self.filename))
+        print("Time taken : {} seconds for writing file '{}'".format(timeit.default_timer() - t1, self.filename))

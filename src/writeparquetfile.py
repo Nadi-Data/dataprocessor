@@ -29,4 +29,4 @@ class WriteParquetFile():
                              overwrite = self.overwrite,
                              write_metadata_file = self.write_metadata_file,
                              compute = self.compute)
-        print("Time taken : {} for writing parquet file '{}'".format(timeit.default_timer() - t1, self.opfile))
+        print("Time taken : {} seconds for writing parquet file '{}'".format(timeit.default_timer() - t1, self.opfile))
