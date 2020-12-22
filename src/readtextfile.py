@@ -10,10 +10,12 @@ import pandas as pd
 
 class ReadTextFile():
     
-    def __init__(self, ipfile, ipschemafile, delimiter, skiprows=0,nrows=0, header=None, compression=None ,index_col=None,blocksize=None,skipfooter=0, parallel=4):
+    def __init__(self, ipfile, ipschemafile, delimiter,engine='c', skiprows=0,nrows=0, header=None, 
+                compression=None ,index_col=None,blocksize=None,skipfooter=0, parallel=4):
         self.ipfile = ipfile
         self.ipschemafile = ipschemafile
         self.sep = delimiter
+        self.engine = engine
         self.skiprows = skiprows
         self.nrows=nrows
         self.header = header
@@ -135,6 +137,7 @@ class ReadTextFile():
                            compression=self.compression,
                            blocksize=self.blocksize,
                            skipfooter = self.skipfooter,
+                           engine= self.engine,
                            dtype=ipcolumn_types)
         ipdf_detail = ipdf_detail.repartition(self.parallel)
         print("Time taken : {} seconds for reading detail records in a file '{}'".format(timeit.default_timer() - t1, self.ipfile))

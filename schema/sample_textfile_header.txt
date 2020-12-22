@@ -1,0 +1,3 @@
+Indicator str
+FileName str
+FileDate str

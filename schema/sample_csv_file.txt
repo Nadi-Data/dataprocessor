@@ -1,0 +1,14 @@
+Region str
+Country	str
+Item_Type str
+Sales_Channel str
+Order_Priority str
+Order_Date str
+Order_ID int
+Ship_Date str
+Units_Sold int
+Unit_Price float
+Unit_Cost float
+Total_Revenue float
+Total_Cost float
+Total_Profit float
