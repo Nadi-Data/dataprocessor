@@ -11,7 +11,8 @@ import pandas as pd
 class ReadTextFile():
     
     def __init__(self, ipfile, ipschemafile, delimiter,engine='c', skiprows=0,nrows=0, header=None, 
-                compression=None ,index_col=None,blocksize=None,skipfooter=0, parallel=4):
+                compression=None ,index_col=None,blocksize=None,skipfooter=0, parallel=4,
+                parse_dates=None):
         self.ipfile = ipfile
         self.ipschemafile = ipschemafile
         self.sep = delimiter
@@ -24,11 +25,13 @@ class ReadTextFile():
         self.blocksize = blocksize
         self.skipfooter = skipfooter
         self.parallel = parallel
+        self.parse_dates = parse_dates
 
     def read_using_dask(self):
         t1 = timeit.default_timer()
         """ Prepare Column names and column data types from schema file"""
         ipcolumns = []
+        ipdatetimecolumns = []
         ipcolumn_types = {}
         # all empty lines should be removed from ipschemafile
         with open(self.ipschemafile, 'r') as f:
@@ -36,8 +39,13 @@ class ReadTextFile():
                 if line == '':
                     break
                 rec = line.strip().split()
+                if rec[1] == 'datetime':
+                    ipdatetimecolumns.append(rec[0])
+                    ipcolumn_types[rec[0]] = 'str' #Taking more time when parsing dates
+                else:
+                    ipcolumn_types[rec[0]] = rec[1]
                 ipcolumns.append(rec[0])
-                ipcolumn_types[rec[0]] = rec[1]
+                
         # Raise exception if ipcolumns contain duplicates
         """ Create input file dataframe using dask"""
         ipdf = dd.read_csv(self.ipfile,
@@ -47,6 +55,7 @@ class ReadTextFile():
                            names=ipcolumns,
                            compression=self.compression,
                            blocksize=self.blocksize,
+                           #parse_dates=ipdatetimecolumns,
                            dtype=ipcolumn_types)
         ipdf = ipdf.repartition(self.parallel)
         print("Time taken : {} seconds for reading file '{}'".format(timeit.default_timer() - t1, self.ipfile))

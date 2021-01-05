@@ -3,9 +3,9 @@ Country	str
 Item_Type str
 Sales_Channel str
 Order_Priority str
-Order_Date str
+Order_Date datetime
 Order_ID int
-Ship_Date str
+Ship_Date datetime
 Units_Sold int
 Unit_Price float
 Unit_Cost float
