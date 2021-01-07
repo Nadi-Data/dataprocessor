@@ -13,6 +13,10 @@ if __name__ == "__main__":
                                    ipschemafile='schema/sample_csv_file.txt',
                                    delimiter=',', skiprows=1, parallel=4).read_using_dask()
 
+    fwf_df = readtextfile.ReadTextFile(ipfile='/Users/sripri/Downloads/sample_fwf.txt',
+                                   ipschemafile='/Users/sripri/Documents/dataprocessor/schema/sample_fwf.types',
+                                   delimiter='fixed width', parallel=4).read_using_dask()                                   
+
     """ Write compressed text file with single_file as True"""
     writetextfile.WriteTextFile(ipdf=df, filename="/Users/sriyan/Downloads/sample_textfile.gz",
                                 single_file=True, encoding='utf-8', sep='|', header=False, compression='gzip').write_using_dask()

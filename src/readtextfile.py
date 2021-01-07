@@ -8,17 +8,18 @@ import timeit
 import dask.dataframe as dd
 import pandas as pd
 
+
 class ReadTextFile():
-    
-    def __init__(self, ipfile, ipschemafile, delimiter,engine='c', skiprows=0,nrows=0, header=None, 
-                compression=None ,index_col=None,blocksize=None,skipfooter=0, parallel=4,
-                parse_dates=None):
+
+    def __init__(self, ipfile, ipschemafile, delimiter, engine='c', skiprows=0, nrows=0, header=None,
+                 compression=None, index_col=None, blocksize=None, skipfooter=0, parallel=4,
+                 parse_dates=None):
         self.ipfile = ipfile
         self.ipschemafile = ipschemafile
         self.sep = delimiter
         self.engine = engine
         self.skiprows = skiprows
-        self.nrows=nrows
+        self.nrows = nrows
         self.header = header
         self.compression = compression
         self.index_col = index_col
@@ -32,6 +33,7 @@ class ReadTextFile():
         """ Prepare Column names and column data types from schema file"""
         ipcolumns = []
         ipdatetimecolumns = []
+        ipcolumnwidths = []
         ipcolumn_types = {}
         # all empty lines should be removed from ipschemafile
         with open(self.ipschemafile, 'r') as f:
@@ -39,28 +41,46 @@ class ReadTextFile():
                 if line == '':
                     break
                 rec = line.strip().split()
-                if rec[1] == 'datetime':
-                    ipdatetimecolumns.append(rec[0])
-                    ipcolumn_types[rec[0]] = 'str' #Taking more time when parsing dates
-                else:
-                    ipcolumn_types[rec[0]] = rec[1]
                 ipcolumns.append(rec[0])
-                
+                if self.sep == 'fixed width':
+                    ipcolumnwidths.append(int(rec[1]))
+                    if rec[2] == 'date':
+                        ipdatetimecolumns.append(rec[0])
+                        ipcolumn_types[rec[0]] = 'string' #Taking more time when parsing dates
+                    else:
+                        ipcolumn_types[rec[0]] = rec[2]
+                else:
+                    if rec[1] == 'date':
+                        ipdatetimecolumns.append(rec[0])
+                        ipcolumn_types[rec[0]] = 'string' #Taking more time when parsing dates
+                    else:
+                        ipcolumn_types[rec[0]] = rec[1]
+
         # Raise exception if ipcolumns contain duplicates
-        """ Create input file dataframe using dask"""
-        ipdf = dd.read_csv(self.ipfile,
-                           sep=self.sep,
-                           skiprows=self.skiprows,
-                           header=self.header,
-                           names=ipcolumns,
-                           compression=self.compression,
-                           blocksize=self.blocksize,
-                           #parse_dates=ipdatetimecolumns,
-                           dtype=ipcolumn_types)
-        ipdf = ipdf.repartition(self.parallel)
-        print("Time taken : {} seconds for reading file '{}'".format(timeit.default_timer() - t1, self.ipfile))
+
+        if self.sep == 'fixed width':
+            """ Create input file dataframe using dask read fwf"""
+            ipdf = dd.read_fwf(self.ipfile,
+                               header=self.header,
+                               names=ipcolumns,
+                               dtype=ipcolumn_types,
+                               widths=ipcolumnwidths)
+            ipdf = ipdf.repartition(self.parallel)
+        else:
+            """ Create input file dataframe using dask read csv"""
+            ipdf = dd.read_csv(self.ipfile,
+                               sep=self.sep,
+                               skiprows=self.skiprows,
+                               header=self.header,
+                               names=ipcolumns,
+                               compression=self.compression,
+                               blocksize=self.blocksize,
+                               #parse_dates=ipdatetimecolumns,
+                               dtype=ipcolumn_types)
+            ipdf = ipdf.repartition(self.parallel)
+        print("Time taken : {} seconds for reading file '{}'".format(
+            timeit.default_timer() - t1, self.ipfile))
         return ipdf
-    
 
     def read_using_dask_header(self):
         t1 = timeit.default_timer()
@@ -83,12 +103,13 @@ class ReadTextFile():
 
         """ Create input file dataframe using dask"""
         ipdf_header = pd.read_csv(io.StringIO(first_line),
-                           sep=self.sep,
-                           names=ipcolumns,
-                           compression=self.compression,
-                           dtype=ipcolumn_types)
-        
-        print("Time taken : {} seconds for reading header '{}'".format(timeit.default_timer() - t1, self.ipfile))
+                                  sep=self.sep,
+                                  names=ipcolumns,
+                                  compression=self.compression,
+                                  dtype=ipcolumn_types)
+
+        print("Time taken : {} seconds for reading header '{}'".format(
+            timeit.default_timer() - t1, self.ipfile))
         return ipdf_header
 
     def read_using_dask_trailer(self):
@@ -105,7 +126,7 @@ class ReadTextFile():
                 ipcolumns.append(rec[0])
                 ipcolumn_types[rec[0]] = rec[1]
         # Raise exception if ipcolumns contain duplicates
-        
+
         """ Read Trailer"""
         with open(self.ipfile, 'rb') as f:
             f.seek(-2, os.SEEK_END)
@@ -115,12 +136,13 @@ class ReadTextFile():
 
         """ Create input file dataframe using dask"""
         ipdf_trailer = pd.read_csv(io.StringIO(last_line),
-                           sep=self.sep,
-                           names=ipcolumns,
-                           compression=self.compression,
-                           dtype=ipcolumn_types)
-        
-        print("Time taken : {} seconds for reading trailer '{}'".format(timeit.default_timer() - t1, self.ipfile))
+                                   sep=self.sep,
+                                   names=ipcolumns,
+                                   compression=self.compression,
+                                   dtype=ipcolumn_types)
+
+        print("Time taken : {} seconds for reading trailer '{}'".format(
+            timeit.default_timer() - t1, self.ipfile))
         return ipdf_trailer
 
     def read_using_dask_detail(self):
@@ -139,15 +161,16 @@ class ReadTextFile():
         # Raise exception if ipcolumns contain duplicates
         """ Create input file dataframe using dask"""
         ipdf_detail = dd.read_csv(self.ipfile,
-                           sep=self.sep,
-                           skiprows=self.skiprows,
-                           header=self.header,
-                           names=ipcolumns,
-                           compression=self.compression,
-                           blocksize=self.blocksize,
-                           skipfooter = self.skipfooter,
-                           engine= self.engine,
-                           dtype=ipcolumn_types)
+                                  sep=self.sep,
+                                  skiprows=self.skiprows,
+                                  header=self.header,
+                                  names=ipcolumns,
+                                  compression=self.compression,
+                                  blocksize=self.blocksize,
+                                  skipfooter=self.skipfooter,
+                                  engine=self.engine,
+                                  dtype=ipcolumn_types)
         ipdf_detail = ipdf_detail.repartition(self.parallel)
-        print("Time taken : {} seconds for reading detail records in a file '{}'".format(timeit.default_timer() - t1, self.ipfile))
+        print("Time taken : {} seconds for reading detail records in a file '{}'".format(
+            timeit.default_timer() - t1, self.ipfile))
         return ipdf_detail

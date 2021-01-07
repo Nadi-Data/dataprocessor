@@ -1,0 +1,14 @@
+Region 7 str
+Country	8 str
+Item_Type 9 str
+Sales_Channel 7 str
+Order_Priority 1 str
+Order_Date 10 datetime
+Order_ID 9 int
+Ship_Date 10 datetime
+Units_Sold 4 int
+Unit_Price 5 float
+Unit_Cost 5 float
+Total_Revenue 9 float
+Total_Cost 9 float
+Total_Profit 8 float
