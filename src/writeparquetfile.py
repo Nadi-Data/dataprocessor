@@ -4,10 +4,11 @@
 
 import timeit
 import dask.dataframe as dd
+import pandas as pd
 
 class WriteParquetFile():
 
-    def __init__(self, ipdf, opfile, partitionkeys=None, compression='default', engine='auto', append=False, overwrite=False, write_metadata_file=False, compute=True):
+    def __init__(self, ipdf, opfile, partitionkeys=None, compression='snappy', engine='pyarrow', append=False, overwrite=False, write_metadata_file=False):
         
         self.ipdf = ipdf
         self.opfile = opfile
@@ -17,7 +18,6 @@ class WriteParquetFile():
         self.append = append
         self.overwrite = overwrite
         self.write_metadata_file = write_metadata_file
-        self.compute = compute
 
     def write_using_dask(self):
         t1 = timeit.default_timer()
@@ -27,6 +27,5 @@ class WriteParquetFile():
                              compression = self.compression,
                              append = self.append,
                              overwrite = self.overwrite,
-                             write_metadata_file = self.write_metadata_file,
-                             compute = self.compute)
+                             write_metadata_file = self.write_metadata_file)
         print("Time taken : {} seconds for writing parquet file '{}'".format(timeit.default_timer() - t1, self.opfile))

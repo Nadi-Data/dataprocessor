@@ -1,41 +1,82 @@
-from pyflink.dataset import ExecutionEnvironment
-from pyflink.table import TableConfig, DataTypes, BatchTableEnvironment
-from pyflink.table.descriptors import Schema, OldCsv, FileSystem
-from pyflink.table.expressions import lit
+from pyflink.table import EnvironmentSettings, StreamTableEnvironment, BatchTableEnvironment
+from pyflink.table.types import DataTypes
+from pyflink.table.udf import udf
+from timeit import default_timer as timer
+import logging
+import sys
 
-# environment configuration
-exec_env = ExecutionEnvironment.get_execution_environment()
-exec_env.set_parallelism(1)
-t_config = TableConfig()
-t_env = BatchTableEnvironment.create(exec_env, t_config)
+def test():
+    # 1. create a TableEnvironment
+    #env_settings = EnvironmentSettings.new_instance().in_streaming_mode().use_blink_planner().build()
+    #table_env = StreamTableEnvironment.create(environment_settings=env_settings)
+    env_settings = EnvironmentSettings.new_instance().in_batch_mode().use_blink_planner().build()
+    table_env = BatchTableEnvironment.create(environment_settings=env_settings)
 
-# register Orders table and Result table sink in table environment
-ip_data_path = "/tmp/input"
-op_data_path = "/tmp/output"
-source_ddl = f"""
-        create table Orders(
-            a VARCHAR
-        ) with (
+    # 2. create source Table
+    table_env.execute_sql("""
+        CREATE TABLE source_table (
+            Region VARCHAR,
+            Country	VARCHAR,
+            Item_Type VARCHAR,
+            Sales_Channel VARCHAR,
+            Order_Priority VARCHAR,
+            Order_Date VARCHAR,
+            Order_ID VARCHAR,
+            Ship_Date VARCHAR,
+            Units_Sold VARCHAR,
+            Unit_Price VARCHAR,
+            Unit_Cost VARCHAR,
+            Total_Revenue VARCHAR,
+            Total_Cost VARCHAR,
+            Total_Profit VARCHAR
+        ) WITH (
             'connector' = 'filesystem',
-            'format' = 'csv',
-            'path' = '{ip_data_path}'
+            'path' = '/tmp/data/5m_Sales_Records.csv',
+            'format' = 'csv'
         )
-        """
-t_env.execute_sql(source_ddl)
+    """)
 
-sink_ddl = f"""
-    create table `Result`(
-        a VARCHAR,
-        cnt BIGINT
-    ) with (
-        'connector' = 'filesystem',
-        'format' = 'csv',
-        'path' = '{op_data_path}'
-    )
-    """
-t_env.execute_sql(sink_ddl)
+    table_env.execute_sql("""
+        CREATE TABLE sink_table (
+            Region VARCHAR,
+            Country	VARCHAR,
+            Item_Type VARCHAR,
+            Sales_Channel VARCHAR,
+            Order_Priority VARCHAR,
+            Order_Date VARCHAR,
+            Order_ID VARCHAR,
+            Ship_Date VARCHAR,
+            Units_Sold VARCHAR,
+            Unit_Price VARCHAR,
+            Unit_Cost VARCHAR,
+            Total_Revenue VARCHAR,
+            Total_Cost VARCHAR,
+            Total_Profit VARCHAR
+        )
+          WITH (
+            'connector' = 'filesystem',
+            'path' = '/tmp/data/xxx_Sales_Records.csv',
+            'format' = 'csv'
+        )
+    """)
+   
+    @udf(input_types=DataTypes.STRING(), result_type=DataTypes.ARRAY(DataTypes.STRING()))
+    def split(input_str: str):
+       return input_str.split(",")
 
-# specify table program
-orders = t_env.from_path("Orders")
 
-orders.group_by("a").select(orders.a, orders.a.count.alias('cnt')).execute_insert("Result").wait()
+    @udf(input_types=[DataTypes.ARRAY(DataTypes.STRING()), DataTypes.INT()], result_type=DataTypes.STRING())
+    def get(arr, index):
+       return arr[index]
+
+    table_env.register_function("split", split)
+    table_env.register_function("get", get)
+
+    table_env.sql_query("SELECT * FROM source_table order by Region") \
+            .execute_insert("sink_table").wait()
+
+if __name__ == '__main__':
+    #logging.basicConfig(stream=sys.stdout, level=logging.INFO, format="%(message)s")
+    start = timer()
+    test()
+    print(timer() - start)

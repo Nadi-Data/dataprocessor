@@ -44,13 +44,13 @@ class ReadTextFile():
                 ipcolumns.append(rec[0])
                 if self.sep == 'fixed width':
                     ipcolumnwidths.append(int(rec[1]))
-                    if rec[2] == 'date':
+                    if rec[2] == 'datetime':
                         ipdatetimecolumns.append(rec[0])
                         ipcolumn_types[rec[0]] = 'string' #Taking more time when parsing dates
                     else:
                         ipcolumn_types[rec[0]] = rec[2]
                 else:
-                    if rec[1] == 'date':
+                    if rec[1] == 'datetime':
                         ipdatetimecolumns.append(rec[0])
                         ipcolumn_types[rec[0]] = 'string' #Taking more time when parsing dates
                     else:
@@ -76,6 +76,7 @@ class ReadTextFile():
                                compression=self.compression,
                                blocksize=self.blocksize,
                                #parse_dates=ipdatetimecolumns,
+                               #infer_datetime_format=True, # not tested
                                dtype=ipcolumn_types)
             ipdf = ipdf.repartition(self.parallel)
         print("Time taken : {} seconds for reading file '{}'".format(

@@ -9,34 +9,36 @@ from fastavro import writer
 
 class WriteAvroFile():
 
-    def __init__(self, ipdf, client, opfile=None, compression=None, append=False, overwrite=False, compute=True):
+    def __init__(self, ipdf, partitionnumber, opfile=None, compression=None, append=False, overwrite=False, compute=True):
         
         self.ipdf = ipdf
-        self.opfile = opfile
+        self.partitionnumber = partitionnumber
+        self.opfile = opfile + '.' + str(self.partitionnumber) + '.avro'
         self.compression = compression
         self.append = append
         self.overwrite = overwrite
         self.compute = compute
-        self.client = client
         self.schema = ''
 
-        with open('/Users/sripri/Documents/dataprocessor/schema/sample_csv_file.schema', 'r') as f:
-            schema_fields = []
-            for line in f.readlines():
-                l = line.strip().split()
-                if l[1] != 'date':
-                    schema_fields.append({'name': l[0], 'type':['null', {'type': l[1]}]})
-                else:
-                    schema_fields.append({'name': l[0], 'type':['null', {'type': 'int' , 'logicalType': l[1]}]})
+        self.ipdf.dtypes.apply(lambda x: x.name).to_dict()
+        schema_fields = []
+        for key, value in self.ipdf.dtypes.apply(lambda x: x.name).to_dict().items():
+            if value in ['int64', 'int32']:
+                value = 'int'
+            elif value in ['float64', 'float32']:
+                value = 'float'
+            if value not in ['datetime64[ns]']:
+                schema_fields.append({'name': key, 'type':['null', {'type': value}]})
+            else:
+                schema_fields.append({'name': key, 'type':['null', {'type': 'int' , 'logicalType': 'date'}]})
         self.schema = {'name': 'avro schema', 'doc': 'generated automatically using dataprocessor',
                         'type': 'record',
                         'fields': schema_fields}
 
     def write_using_fastavro(self):
         t1 = timeit.default_timer()
-        file_nm = '/Users/sripri/Downloads/sample_file.' + str(i) + '.avro'
-        with open(file_nm, 'wb') as f:
-            writer(f, schema=self.schema, records=self.ipdf.get_partition(i).compute().to_dict("records"))
-        #pandavro.to_avro(file_nm, self.ipdf.get_partition(i).compute(), schema=schema, append=self.append)
+        with open(self.opfile, 'wb') as f:
+            writer(f, schema=self.schema, records=self.ipdf.to_dict("records"))
+        #pandavro.to_avro(self.opfile, self.ipdf, schema=self.schema, append=self.append)
         print("Time taken : {} seconds ".format(timeit.default_timer() - t1))
         return 1
